@@ -2,6 +2,15 @@ import requests
 from abc import ABC, abstractmethod
 from config import DEFAULT_HEADERS
 
+# Registro global de scrapers
+SCRAPER_REGISTRY = []
+
+def register_scraper(cls):
+    """Decorador para registrar automáticamente un scraper en el sistema."""
+    if cls not in SCRAPER_REGISTRY:
+        SCRAPER_REGISTRY.append(cls)
+    return cls
+
 class BaseScraper(ABC):
     def __init__(self, url: str, headers: dict = None):
         self.url = url
@@ -18,6 +27,14 @@ class BaseScraper(ABC):
             return response.text
         except Exception as e:
             raise RuntimeError(f"Error al realizar la petición a {self.url}: {str(e)}")
+
+    @classmethod
+    def matches(cls, url: str) -> bool:
+        """
+        Retorna True si este scraper es adecuado para procesar la URL.
+        Debe ser implementado por las subclases.
+        """
+        return False
 
     @abstractmethod
     def scrape(self) -> list:

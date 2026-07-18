@@ -40,35 +40,47 @@ class GenericScraper(BaseScraper):
             text = soup.get_text(separator=" ")
             lines = [line.strip() for line in text.splitlines() if line.strip()]
             
-            # Buscar coincidencias semánticas con SUBE / Transporte
-            keywords = re.compile(r"(sube|transporte|colectivo|subte|pasajes|descuento|reintegro|boleto)", re.IGNORECASE)
+            # Buscar coincidencias semánticas con SUBE / Transporte usando un filtro de dos fases
+            transport_keywords = re.compile(r"(sube|transporte|colectivo|subte|tren|pasajes|viaje|boleto)", re.IGNORECASE)
+            benefit_keywords = re.compile(r"(reintegro|descuento|ahorro|gratis|bonific|promo)", re.IGNORECASE)
             
             seen_sentences = set()
             for line in lines:
                 sentences = re.split(r'[.!?•-]\s*', line)
                 for sentence in sentences:
                     sentence = re.sub(r'\s+', ' ', sentence).strip()
-                    if len(sentence) > 30 and keywords.search(sentence) and ("%" in sentence or "$" in sentence or "gratis" in sentence.lower() or "descuento" in sentence.lower()):
-                        if sentence not in seen_sentences and len(seen_sentences) < 5:
-                            seen_sentences.add(sentence)
-                            
-                            # Intentamos estructurar algo básico a partir de la línea
-                            m_pct = re.search(r"(\d+%\s*(?:de)?\s*(?:ahorro|reintegro|descuento|devolución))", sentence, re.IGNORECASE)
-                            pct = m_pct.group(1) if m_pct else "Descuento de Transporte"
-                            
-                            m_tope = re.search(r"(tope\s*(?:de\s*)?\$\s*[\d\.]+)", sentence, re.IGNORECASE)
-                            tope = m_tope.group(1) if m_tope else "Consultar bases"
+                    if len(sentence) > 30:
+                        # Fase 1: Contexto de transporte
+                        is_transport = transport_keywords.search(sentence)
+                        # Fase 2: Indicador de beneficio o descuento
+                        has_benefit = (
+                            benefit_keywords.search(sentence) 
+                            or "%" in sentence 
+                            or "$" in sentence 
+                            or "gratis" in sentence.lower()
+                        )
+                        
+                        if is_transport and has_benefit:
+                            if sentence not in seen_sentences and len(seen_sentences) < 5:
+                                seen_sentences.add(sentence)
+                                
+                                # Intentamos estructurar algo básico a partir de la línea
+                                m_pct = re.search(r"(\d+%\s*(?:de)?\s*(?:ahorro|reintegro|descuento|devolución|bonific))", sentence, re.IGNORECASE)
+                                pct = m_pct.group(1) if m_pct else "Descuento de Transporte"
+                                
+                                m_tope = re.search(r"(tope\s*(?:de\s*)?\$\s*[\d\.]+)", sentence, re.IGNORECASE)
+                                tope = m_tope.group(1) if m_tope else "Consultar bases"
 
-                            promos.append({
-                                "titulo": f"Promo Detectada: {pct}",
-                                "descripcion": sentence if len(sentence) <= 240 else sentence[:237] + "...",
-                                "tope": tope,
-                                "dias": "Consultar enlace",
-                                "requisitos": "Verificar bases y condiciones oficiales",
-                                "tipo": "Transporte / SUBE",
-                                "enlace": self.url,
-                                "fuente": "En Vivo (Web)"
-                            })
+                                promos.append({
+                                    "titulo": f"Promo Detectada: {pct}",
+                                    "descripcion": sentence,
+                                    "tope": tope,
+                                    "dias": "Consultar enlace",
+                                    "requisitos": "Verificar bases y condiciones oficiales",
+                                    "tipo": "Transporte / SUBE",
+                                    "enlace": self.url,
+                                    "fuente": "En Vivo (Web)"
+                                })
             
             if promos:
                 return promos

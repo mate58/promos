@@ -1,10 +1,15 @@
 import re
 from bs4 import BeautifulSoup
-from scrapers.base import BaseScraper
+from scrapers.base import BaseScraper, register_scraper
 from config import FALLBACK_PROMOTIONS
 
+@register_scraper
 class BancoProvinciaScraper(BaseScraper):
+    @classmethod
+    def matches(cls, url: str) -> bool:
+        return "bancoprovincia.com.ar" in url
     def scrape(self) -> list:
+        unique_promos = []
         try:
             html = self.fetch()
             soup = BeautifulSoup(html, "html.parser")
@@ -15,7 +20,15 @@ class BancoProvinciaScraper(BaseScraper):
             
             # Encontrar todas las etiquetas que contengan estas palabras
             for tag in soup.find_all(["p", "span", "div", "h3", "h4", "a"]):
+                # Omitir divs contenedores complejos para evitar bloques de texto concatenados
+                if tag.name == "div" and tag.find_all(["p", "span", "div", "h3", "h4", "a"]):
+                    continue
+                
                 text = tag.get_text(strip=True)
+                # Evitar bloques de texto masivos que unan múltiples ofertas independientes
+                if len(text) > 400:
+                    continue
+                    
                 if keywords.search(text) and "%" in text:
                     # Intentar estructurar la promo detectada
                     reintegro_match = re.search(r"(\d+%\s*(?:de)?\s*(?:ahorro|reintegro|descuento|devolución))", text, re.IGNORECASE)
@@ -27,7 +40,7 @@ class BancoProvinciaScraper(BaseScraper):
 
                     promos.append({
                         "titulo": f"Cuenta DNI - {titulo}",
-                        "descripcion": text if len(text) <= 250 else text[:247] + "...",
+                        "descripcion": text,
                         "tope": tope,
                         "dias": "Todos los días" if "todos" in text.lower() else "Consultar bases",
                         "requisitos": "Uso de la app Cuenta DNI / NFC",

@@ -1,4 +1,5 @@
 import os
+import json
 
 DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -7,135 +8,21 @@ DEFAULT_HEADERS = {
     "Connection": "keep-alive"
 }
 
-FALLBACK_PROMOTIONS = {
-    "banco_provincia": {
-        "entidad": "Banco Provincia (Cuenta DNI)",
-        "promociones": [
-            {
-                "titulo": "Reintegro 100% en Transporte Especial Jóvenes",
-                "descripcion": "100% de reintegro en recarga de tarjeta SUBE para usuarios de Cuenta DNI de entre 13 y 17 años.",
-                "tope": "$3.000 por persona por mes",
-                "dias": "Todos los días",
-                "requisitos": "Pagar a través de la función 'Recarga Transporte' desde la app Cuenta DNI.",
-                "tipo": "Colectivos / Subtes / Trenes",
-                "enlace": "https://www.bancoprovincia.com.ar/cuentadni/contenidos/cdnibeneficios/"
-            },
-            {
-                "titulo": "Reintegro 100% en Viajes con NFC",
-                "descripcion": "100% de reintegro al abonar el viaje directamente con el celular mediante tecnología NFC de la app Cuenta DNI.",
-                "tope": "$10.000 mensual",
-                "dias": "Todos los días",
-                "requisitos": "Disponible en terminales de colectivos y subtes habilitadas del AMBA.",
-                "tipo": "Colectivos / Subtes",
-                "enlace": "https://www.bancoprovincia.com.ar/cuentadni/contenidos/cdnibeneficios/"
-            }
-        ]
-    },
-    "banco_nacion": {
-        "entidad": "Banco Nación (BNA+)",
-        "promociones": [
-            {
-                "titulo": "50% de Reintegro con QR Transporte",
-                "descripcion": "50% de descuento en pasajes de colectivos y subtes pagando con QR mediante la app BNA+.",
-                "tope": "$10.000 por usuario por mes",
-                "dias": "Todos los días",
-                "requisitos": "Pagar con saldo en cuenta a través de MODO BNA+ en terminales adheridas.",
-                "tipo": "Colectivos / Subtes",
-                "enlace": "https://www.bna.com.ar/Personas/Promociones"
-            }
-        ]
-    },
-    "banco_macro": {
-        "entidad": "Banco Macro",
-        "promociones": [
-            {
-                "titulo": "20% de Ahorro con QR Transporte",
-                "descripcion": "20% de descuento en pasajes utilizando la funcionalidad de Viaje con QR (VQR) de la app Macro/MODO.",
-                "tope": "$10.000 por usuario por mes",
-                "dias": "Todos los días",
-                "requisitos": "Tener saldo mínimo de $1.200 en cuenta y pagar con dinero disponible.",
-                "tipo": "Colectivos / Subtes",
-                "enlace": "https://www.macro.com.ar/transporte"
-            },
-            {
-                "titulo": "20% de Reintegro con NFC / Contactless",
-                "descripcion": "20% de descuento abonando desde el celular con tarjetas de Débito Visa Macro.",
-                "tope": "$10.000 por tarjeta por mes",
-                "dias": "Todos los días",
-                "requisitos": "Usar Apple Pay, Google Pay o MODO Contactless en molinetes de subte habilitados (red Emova) o colectivos.",
-                "tipo": "Colectivos / Subtes",
-                "enlace": "https://www.macro.com.ar/transporte"
-            }
-        ]
-    },
-    "banco_ciudad": {
-        "entidad": "Banco Ciudad (BUEPP)",
-        "promociones": [
-            {
-                "titulo": "Viaje Gratis para Jubilados",
-                "descripcion": "Pase gratuito de subte para jubilados, pensionados y retirados asociados a la app BUEPP del Banco Ciudad.",
-                "tope": "Sin límite de viajes",
-                "dias": "Todos los días",
-                "requisitos": "Gestionar pase en la plataforma TAD del Gobierno de la Ciudad y vincular BUEPP con SUBE.",
-                "tipo": "Subtes",
-                "enlace": "https://www.bancociudad.com.ar/beneficios/"
-            }
-        ]
-    },
-    "modo": {
-        "entidad": "MODO",
-        "promociones": [
-            {
-                "titulo": "50% de Reintegro en QR Transporte",
-                "descripcion": "50% de descuento adicional al abonar colectivos y subtes mediante la funcionalidad de QR.",
-                "tope": "Sujeto a topes de campañas activas del banco emisor",
-                "dias": "Todos los días",
-                "requisitos": "Escanear el QR con saldo en cuenta usando la aplicación MODO.",
-                "tipo": "Colectivos / Subtes",
-                "enlace": "https://www.modo.com.ar/promos"
-            }
-        ]
-    },
-    "red_sube": {
-        "entidad": "Red SUBE (Nacional)",
-        "promociones": [
-            {
-                "titulo": "Descuento por Combinaciones (Red SUBE)",
-                "descripcion": "Descuentos automáticos al combinar dos o más medios de transporte público en AMBA dentro de un lapso de 2 horas.",
-                "tope": "Automático",
-                "dias": "Todos los días",
-                "requisitos": "1er viaje: Tarifa plena. 2do viaje: 50% de descuento. A partir del 3er viaje: 75% de descuento.",
-                "tipo": "Colectivos / Subtes / Trenes",
-                "enlace": "https://www.argentina.gob.ar/transporte/beneficios-vigentes-en-red-sube"
-            }
-        ]
-    },
-    "tarifa_social": {
-        "entidad": "Tarifa Social Federal",
-        "promociones": [
-            {
-                "titulo": "55% de Descuento Federal",
-                "descripcion": "55% de descuento en la tarifa de pasajes de colectivos y subtes para grupos beneficiarios de ANSES.",
-                "tope": "Sin límite de viajes",
-                "dias": "Todos los días",
-                "requisitos": "Generar PIN SUBE en Mi ANSES, registrar la tarjeta y activarla en una Terminal Automática o app SUBE.",
-                "tipo": "Colectivos / Subtes / Trenes",
-                "enlace": "https://www.anses.gob.ar/programas/tarifa-social/tarifa-social-federal-de-transporte"
-            }
-        ]
-    },
-    "boleto_estudiantil": {
-        "entidad": "Boleto Estudiantil",
-        "promociones": [
-            {
-                "titulo": "Boleto Estudiantil Gratuito",
-                "descripcion": "Viajes sin costo en colectivos y subte para alumnos de nivel inicial, primario, secundario y universitario.",
-                "tope": "50 viajes mensuales",
-                "dias": "Lunes a Viernes de 5:00 a 0:00 hs",
-                "requisitos": "Estar inscrito en el ciclo lectivo y registrar la SUBE Estudiantil asignada por la jurisdicción correspondiente (CABA/PBA).",
-                "tipo": "Colectivos / Subtes",
-                "enlace": "https://buenosaires.gob.ar/jefaturadegabinete/movilidad/boleto-estudiantil"
-            }
-        ]
-    }
-}
+# Carga dinámica de promociones fallback desde JSON
+FALLBACK_PROMOTIONS = {}
+fallback_path = os.path.join(os.path.dirname(__file__), "bancos", "fallbacks.json")
+
+try:
+    if os.path.exists(fallback_path):
+        with open(fallback_path, "r", encoding="utf-8") as f:
+            FALLBACK_PROMOTIONS = json.load(f)
+    else:
+        # Fallback al directorio de trabajo actual por si se ejecuta en otra estructura
+        fallback_path_alt = os.path.join("bancos", "fallbacks.json")
+        if os.path.exists(fallback_path_alt):
+            with open(fallback_path_alt, "r", encoding="utf-8") as f:
+                FALLBACK_PROMOTIONS = json.load(f)
+except Exception as e:
+    # Registra advertencia si el archivo no puede leerse, permitiendo continuar
+    import sys
+    print(f"Advertencia: No se pudo cargar fallbacks.json ({e}).", file=sys.stderr)

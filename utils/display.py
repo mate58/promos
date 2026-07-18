@@ -4,7 +4,7 @@ from rich.panel import Panel
 from rich.align import Align
 from rich import box
 
-def display_promotions(promotions_by_bank: dict):
+def display_promotions(promotions_by_bank: dict, verbose: bool = False):
     console = Console()
     
     # Título principal con Panel
@@ -44,8 +44,12 @@ def display_promotions(promotions_by_bank: dict):
             source = promo.get("fuente", "Local")
             source_style = "[bold green]En Vivo (Web)[/bold green]" if "Vivo" in source else "[bold blue]Local (Estable)[/bold blue]"
             
+            desc = promo.get("descripcion", "")
+            if not verbose and len(desc) > 150:
+                desc = desc[:147] + "..."
+                
             req_str = f"\n[dim]Req: {promo.get('requisitos', '')}[/dim]" if promo.get('requisitos') else ""
-            desc_text = f"{promo.get('descripcion', '')}{req_str}"
+            desc_text = f"{desc}{req_str}"
             
             table.add_row(
                 promo.get("titulo", "N/D"),

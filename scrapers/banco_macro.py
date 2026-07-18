@@ -1,9 +1,13 @@
 import re
 from bs4 import BeautifulSoup
-from scrapers.base import BaseScraper
+from scrapers.base import BaseScraper, register_scraper
 from config import FALLBACK_PROMOTIONS
 
+@register_scraper
 class BancoMacroScraper(BaseScraper):
+    @classmethod
+    def matches(cls, url: str) -> bool:
+        return "macro.com.ar" in url
     def scrape(self) -> list:
         promos = []
         try:
@@ -54,7 +58,7 @@ class BancoMacroScraper(BaseScraper):
                     
                     promos.append({
                         "titulo": f"Banco Macro - {display_title}",
-                        "descripcion": desc if len(desc) <= 240 else desc[:237] + "...",
+                        "descripcion": desc,
                         "tope": tope,
                         "dias": "Todos los días",
                         "requisitos": "Pagar mediante la app Macro / MODO QR o tarjetas de Débito NFC.",
